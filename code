@@ -1,0 +1,50 @@
+// importing libraries
+import sys
+import numpy as np
+import csv
+import cantera as ca
+
+// definition of gas
+gas = ca.Solution('gri30.xml')
+
+// creating and opening the file for writing data
+outfile = open('wyniki.csv','w')
+csvwriter = csv.writer(outfile)
+
+// preparing lists of mixture's ingredients and calculating phi coeficient inside the loop
+// mixture's are prepared with the method which gives 1 mole of total mixture
+H2=np.zeros(300)
+O2=np.zeros(300)
+N2=np.zeros(300)
+phi=np.zeros(300)
+
+for i in range(0,300):
+	H2[i]=float((1+0.01*i)/5.76)
+	O2[i]=float((4.76-0.01*i)/4.76/5.76)
+	N2[i]=float(3.76*(4.76-0.01*i)/4.76/5.76)
+	phi[i]=float(4.76/2*H2[i]/(O2[i]+N2[i]))
+
+// defining the mixture
+	gas.X = {'H2':H2[i],'O2':O2[i],'N2':N2[i]}
+	gas.TP = 1000.0, ca.one_atm
+
+// defining reactor
+	r = ca._cantera.Reactor(gas)
+
+	sim = ca.ReactorNet([r])
+	time = 0.0
+
+// initiation of the simulation for every mixture inside the loop
+	for n in range(200):
+		time += 1.e-5
+		sim.advance(time)
+    
+// writing the iteration, phi and lapse time to the file
+		if r.T>1010:
+			print('%i, %2.2f, %10e' % (i,phi[i],time))
+			csvwriter.writerow([i,phi[i],time])
+			break
+// closing the file
+outfile.close()
+   
+
